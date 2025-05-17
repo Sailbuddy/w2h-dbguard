@@ -1,0 +1,38 @@
+name: 💾 Supabase Full Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # ⏰ Täglich um 03:00 UTC (05:00 CET/06:00 CEST)
+  workflow_dispatch:     # ▶️ Manuelles Starten über GitHub UI
+
+jobs:
+  export:
+    name: 🔁 Export Full Backup
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Supabase CLI (fixed version & safety check)
+        uses: supabase/setup-cli@v1
+        with:
+          version: 1.153.0
+
+      - name: 📁 Create backup folder if not exists
+        run: mkdir -p backups
+
+      - name: 💾 Dump full database
+        run: |
+          FILE="backups/full_backup_$(date -u +%Y-%m-%d_%H-%M-%S).sql"
+          supabase db dump --linked -f "$FILE"
+
+      - name: 💬 Commit backup file
+        run: |
+          git config user.name "w2h-dbguard-bot"
+          git config user.email "dbguard@wind2horizon.com"
+          git add backups/
+          git commit -m "📦 Full DB Backup at $(date -u +"%Y-%m-%d %H:%M:%S")" || echo "Nothing to commit"
+
+      - name: 🚀 Push backup to repository
+        run: git push
