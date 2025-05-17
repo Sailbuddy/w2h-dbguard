@@ -1,38 +1,38 @@
-name: 💾 Supabase Full Backup
+name: 📅 Daily Supabase Backup
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # ⏰ Täglich um 03:00 UTC (05:00 CET/06:00 CEST)
-  workflow_dispatch:     # ▶️ Manuelles Starten über GitHub UI
+    - cron: '0 2 * * *'  # Täglich um 02:00 UTC
+  workflow_dispatch:
 
 jobs:
-  export:
-    name: 🔁 Export Full Backup
+  backup:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Repo
-        uses: actions/checkout@v4
+      - name: Checkout Repo
+        uses: actions/checkout@v3
 
-      - name: ⚙️ Setup Supabase CLI (fixed version & safety check)
+      - name: Setup Supabase CLI (fixed version & safety check)
         uses: supabase/setup-cli@v1
         with:
           version: 1.153.0
 
-      - name: 📁 Create backup folder if not exists
+      - name: Create backup folder if not exists
         run: mkdir -p backups
 
-      - name: 💾 Dump full database
+      - name: Dump full database
         run: |
-          FILE="backups/full_backup_$(date -u +%Y-%m-%d_%H-%M-%S).sql"
+          FILE="backups/full_backup_$(date -u +"%Y-%m-%d_%H-%M-%S").sql"
           supabase db dump --linked -f "$FILE"
 
-      - name: 💬 Commit backup file
+      - name: Commit backup file
         run: |
-          git config user.name "w2h-dbguard-bot"
-          git config user.email "dbguard@wind2horizon.com"
+          git config --global user.name "Backup Bot"
+          git config --global user.email "actions@github.com"
           git add backups/
-          git commit -m "📦 Full DB Backup at $(date -u +"%Y-%m-%d %H:%M:%S")" || echo "Nothing to commit"
+          git commit -m "🔄 Backup vom $(date +'%Y-%m-%d %H:%M:%S')" || echo "Nothing to commit"
 
-      - name: 🚀 Push backup to repository
-        run: git push
+      - name: Push backup to repository
+        run: |
+          git push
