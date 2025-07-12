@@ -9,6 +9,11 @@ jobs:
   backup:
     runs-on: ubuntu-latest
 
+    env:
+      SUPABASE_PROJECT_REF: ufebkrjjnrfhupwxvpmb
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -18,13 +23,16 @@ jobs:
         with:
           version: 1.153.0
 
+      - name: Remove local config.toml to prevent conflicts
+        run: rm -f supabase/config.toml
+
       - name: Create backup folder if not exists
         run: mkdir -p backups
 
-      - name: Dump full database
+      - name: Dump full database from Supabase Cloud
         run: |
           FILE="backups/full_backup_$(date -u +"%Y-%m-%d_%H-%M-%S").sql"
-          supabase db dump --linked -f "$FILE"
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f "$FILE"
 
       - name: Commit backup file
         run: |
@@ -34,5 +42,4 @@ jobs:
           git commit -m "🔄 Backup vom $(date +'%Y-%m-%d %H:%M:%S')" || echo "Nothing to commit"
 
       - name: Push backup to repository
-        run: |
-          git push
+        run: git push
